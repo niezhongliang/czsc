@@ -535,19 +535,6 @@ def create_enhanced_chart(symbol: str, start_date: str = "2020-01-01", freqs: Li
             zerolinecolor='rgba(128,128,128,0.2)'
         )
     )
-
-    # 调整X轴同步
-    # fig.update_xaxes(
-    #     rangeslider_thickness=0.05,  # 如果保留导航条，调整其厚度
-    #     row=2, col=1
-    # )
-
-    # # 隐藏周末空白
-    # fig.update_xaxes(
-    #     rangebreaks=[{'bounds': ['sat', 'mon']}],  # 隐藏周末
-    #     type='category'  # 防止日期中断
-    # )
-
     
     # 保存图表
     output_path = f"/Users/niez01/Documents/dev/czsc/results/{symbol}_enhanced_czsc.html"

@@ -1,14 +1,10 @@
 import sys
 sys.path.append("/Users/niez01/Documents/dev/czsc")
-
 import os
 import pandas as pd
 from datetime import datetime
-from czsc.utils import KlineChart
 from czsc.connectors.ts_connector import get_raw_bars, get_symbols
-from pathlib import Path
 from typing import List
-from czsc.objects import RawBar
 from czsc import CZSC, Freq
 from czsc.utils.sig import get_zs_seq
 import subprocess
@@ -25,232 +21,8 @@ ma_colors = {
     250: '#D4A5A5'   # 紫色
 }
 
-def generate_stock_kline(symbol: str):
-    """生成指定股票的K线图并保存
 
-    Args:
-        symbol (str): 股票代码，格式如 '000001.SZ#E'
-    """
-    today = datetime.now().strftime('%Y%m%d')
-
-    # 获取该股票的K线数据
-    bars = get_raw_bars(symbol, freq='日线', sdt="20230101", edt=today)
-
-    df = pd.DataFrame(bars)
-
-    # 创建K线图对象
-    stock_code = symbol.split('#')[0]
-    kline = KlineChart(
-        n_rows=3, 
-        height=800,
-        row_height=[0.5, 0.25, 0.25]
-    )
-
-    kline.fig.update_layout(
-        title=dict(
-            text=f"{stock_code} 日K线图",
-            x=0.5,
-            xanchor='center', 
-            y=0.95, 
-            yanchor='top'
-        )
-    )
-
-    # 添加K线
-    kline.add_kline(df, name="K线")
-
-    # 添加均线
-    kline.add_sma(df, ma_seq=(5, 10, 21), row=1, visible=True, line_width=1.2)
-
-    # 添加成交量
-    kline.add_vol(df, row=2)
-
-    # 添加MACD
-    kline.add_macd(df, row=3)
-
-    # 创建保存文件的目录结构
-    desktop = os.path.join(os.path.expanduser("~"), "Desktop")
-    base_dir = os.path.join(desktop, 'kline-data')
-    today_dir = os.path.join(base_dir, today)
-
-    Path(today_dir).mkdir(parents=True, exist_ok=True)
-
-    # 保存为HTML文件
-    kline.fig.write_html(os.path.join(today_dir, f'kline_{stock_code}_{today}.html'))
-
-def draw_czsc_analysis(symbol: str, start_date: str = "2017-01-01"):
-    """
-    绘制股票的分型、线段（笔）和中枢
-    
-    参数:
-    - symbol: 股票代码
-    - start_date: 开始日期
-    """
-    
-    # 第一步：获取数据
-    print(f"正在获取 {symbol} 的数据...")
-    today = datetime.now().strftime('%Y%m%d')
-    
-    # 获取日线数据
-    bars = get_raw_bars(symbol, freq=Freq.D, sdt=start_date, edt=today, raw_bar=True)
-    print(f"bars type: {type(bars)}")
-    if isinstance(bars, pd.DataFrame):
-        bars = [RawBar(**x) for x in bars.to_dict('records')]
-    elif not isinstance(bars, list):
-        print(f"Unexpected type: {type(bars)}")
-        return
-
-    print(f"获取到 {len(bars)} 根K线数据")
-    
-    # 第二步：创建 CZSC 对象进行分析
-    print("正在进行缠论分析...")
-    czsc = CZSC(bars=bars)
-    
-    # 第三步：提取分型数据
-    print(f"识别到 {len(czsc.fx_list)} 个分型")
-    fx_data = []
-    for fx in czsc.fx_list:
-        fx_data.append({
-            'dt': fx.dt,
-            'fx': fx.fx,
-            'mark': fx.mark.value  # 'G' 为顶分型，'D' 为底分型
-        })
-    
-    # 第四步：提取笔（线段）数据  
-    print(f"识别到 {len(czsc.bi_list)} 个笔")
-    bi_data = []
-    if len(czsc.bi_list) > 0:
-        # 添加所有笔的起始分型
-        for bi in czsc.bi_list:
-            bi_data.append({
-                'dt': bi.fx_a.dt, 
-                'bi': bi.fx_a.fx
-            })
-        # 添加最后一个笔的结束分型
-        bi_data.append({
-            'dt': czsc.bi_list[-1].fx_b.dt, 
-            'bi': czsc.bi_list[-1].fx_b.fx
-        })
-    
-    # 第五步：识别中枢
-    print("正在识别中枢...")
-    zs_list = get_zs_seq(czsc.bi_list)
-    print(f"识别到 {len(zs_list)} 个中枢")
-    
-    # 为了在图表上显示中枢，我们需要将中枢转换为可绘制的数据
-    zs_data = []
-    for i, zs in enumerate(zs_list):
-        if zs.is_valid:  # 只显示有效的中枢
-            # 为每个中枢创建矩形框的数据点
-            start_dt = zs.sdt
-            end_dt = zs.edt  
-            zg = zs.zg  # 中枢上沿
-            zd = zs.zd  # 中枢下沿
-            
-            zs_data.append({
-                'start_dt': start_dt,
-                'end_dt': end_dt,
-                'zg': zg,
-                'zd': zd,
-                'zz': zs.zz,  # 中枢中轴
-                'name': f'中枢{i+1}'
-            })
-    
-    # 第六步：使用 czsc 自带的绘图功能
-    print("正在生成图表...")
-    
-    # 准备K线数据
-    kline_data = [bar.__dict__ for bar in czsc.bars_raw]
-    
-    # 使用 czsc 的 to_echarts 方法生成图表
-    chart = czsc.to_echarts(width="1600px", height="800px")
-    
-    # 第七步：增加中枢绘制功能
-    # 由于 czsc 原生不支持中枢绘制，我们需要手动添加
-    chart = add_zentral_to_chart(chart, zs_data)
-    
-    # 第八步：保存并显示图表
-    output_path = f"/Users/niez01/Documents/dev/czsc/results/{symbol}_czsc_analysis.html"
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    chart.render(output_path)
-    
-    print(f"图表已保存到: {output_path}")
-    
-    # 自动打开浏览器显示图表
-    subprocess.run(['open', output_path])
-    
-    # 第九步：打印分析统计信息
-    print("\n=== 缠论分析结果统计 ===")
-    print(f"总K线数量: {len(bars)}")
-    print(f"分型数量: {len(czsc.fx_list)}")
-    print(f"  - 顶分型: {len([fx for fx in czsc.fx_list if fx.mark.value == 'G'])}")
-    print(f"  - 底分型: {len([fx for fx in czsc.fx_list if fx.mark.value == 'D'])}")
-    print(f"笔数量: {len(czsc.bi_list)}")
-    print(f"中枢数量: {len([zs for zs in zs_list if zs.is_valid])}")
-    
-    if zs_data:
-        print("\n=== 中枢详细信息 ===")
-        for i, zs in enumerate(zs_data):
-            print(f"中枢{i+1}: 时间[{zs['start_dt'].strftime('%Y-%m-%d')} ~ {zs['end_dt'].strftime('%Y-%m-%d')}]")
-            print(f"       上沿: {zs['zg']:.2f}, 下沿: {zs['zd']:.2f}, 中轴: {zs['zz']:.2f}")
-    
-    return chart, czsc, zs_list
-
-def add_zentral_to_chart(chart, zs_data):
-    """
-    向图表中添加中枢绘制
-    由于pyecharts不直接支持矩形绘制，我们用线条来表示中枢
-    """
-    try:
-        from pyecharts.charts import Line
-        from pyecharts import options as opts
-        
-        # 为每个中枢添加上沿和下沿的线条
-        for zs in zs_data:
-            # 中枢上沿线
-            zg_line = Line()
-            zg_line.add_xaxis([zs['start_dt'], zs['end_dt']])
-            zg_line.add_yaxis(
-                series_name=f"{zs['name']}_上沿",
-                y_axis=[zs['zg'], zs['zg']],
-                linestyle_opts=opts.LineStyleOpts(color="red", width=2, type_="dashed"),
-                label_opts=opts.LabelOpts(is_show=False),
-                symbol_size=0
-            )
-            
-            # 中枢下沿线  
-            zd_line = Line()
-            zd_line.add_xaxis([zs['start_dt'], zs['end_dt']])
-            zd_line.add_yaxis(
-                series_name=f"{zs['name']}_下沿", 
-                y_axis=[zs['zd'], zs['zd']],
-                linestyle_opts=opts.LineStyleOpts(color="blue", width=2, type_="dashed"),
-                label_opts=opts.LabelOpts(is_show=False),
-                symbol_size=0
-            )
-            
-            # 中枢中轴线
-            zz_line = Line()
-            zz_line.add_xaxis([zs['start_dt'], zs['end_dt']])
-            zz_line.add_yaxis(
-                series_name=f"{zs['name']}_中轴",
-                y_axis=[zs['zz'], zs['zz']],
-                linestyle_opts=opts.LineStyleOpts(color="orange", width=1, type_="dotted"),
-                label_opts=opts.LabelOpts(is_show=False),
-                symbol_size=0
-            )
-            
-            # 将线条添加到主图表的第一个子图中
-            chart.charts[0].overlap(zg_line)
-            chart.charts[0].overlap(zd_line)
-            chart.charts[0].overlap(zz_line)
-            
-    except Exception as e:
-        print(f"添加中枢绘制时出错: {e}")
-        
-    return chart
-
-def create_enhanced_chart(symbol: str, start_date: str = "2020-01-01", freqs: List[str] = None, ma_periods: List[int] = None):
+def create_chart(symbol: str, start_date: str = "2020-01-01", freqs: List[str] = None, ma_periods: List[int] = None):
     """
     创建增强版的缠论分析图表，包含更详细的中枢绘制和MACD指标
     """
@@ -275,7 +47,7 @@ def create_enhanced_chart(symbol: str, start_date: str = "2020-01-01", freqs: Li
         print(f"bars is not list, type: {type(bars)}")
         return
         
-    czsc = CZSC(bars)
+    czsc = CZSC(bars, max_bi_num=60)
     zs_list = get_zs_seq(czsc.bi_list)
     
     # 添加K线图
@@ -514,7 +286,7 @@ def create_enhanced_chart(symbol: str, start_date: str = "2020-01-01", freqs: Li
             yanchor='top',
             font=dict(color='white')  # 标题文字颜色
         ),
-        xaxis_rangeslider_visible=False,
+        xaxis_rangeslider_visible=True,
         height=1000,
         showlegend=True,
         template='plotly_dark',  # 使用暗色模板
@@ -537,23 +309,14 @@ def create_enhanced_chart(symbol: str, start_date: str = "2020-01-01", freqs: Li
     )
     
     # 保存图表
-    output_path = f"/Users/niez01/Documents/dev/czsc/results/{symbol}_enhanced_czsc.html"
+    output_path = f"/Users/niez01/Documents/dev/czsc/results/{symbol}_czsc.html"
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     fig.write_html(output_path)
     
-    print(f"增强版图表已保存到: {output_path}")
+    print(f"图表已保存到: {output_path}")
     subprocess.run(['open', output_path])
     
     return fig
-
-def get_stock_info(symbol: str) -> dict:
-    """获取股票基本信息"""
-    # 这里需要实现获取股票信息的逻辑
-    return {
-        "name": "股票名称",
-        "code": symbol,
-        "industry": "所属行业"
-    }
 
 if __name__ == "__main__":
     # 获取股票列表
@@ -571,11 +334,11 @@ if __name__ == "__main__":
         print(f"找到股票: {test_symbol}")
         
         # 方法2：使用增强版绘图（基于plotly）
-        print("\n=== 方法2：增强版缠论分析图表 ===")
+        print("\n=== 缠论分析图表 ===")
         # 自定义MA/EMA周期
-        chart = create_enhanced_chart(
+        chart = create_chart(
             test_symbol, 
-            "2024-01-01",
+            "2018-01-01",
             freqs=['D'],
             ma_periods=[20, 60, 120]
         )

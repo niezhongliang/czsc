@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from czsc.objects import Signal
 from typing import List
-from show_data import generate_stock_kline
+from dev.viz_czsc_chart import generate_stock_kline
 from czsc.traders.sig_parse import get_signals_config
 
 def create_boll_macd_strategy(symbol: str, **kwargs) -> Position:

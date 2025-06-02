@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-author: zengbin93
-email: zeng_bin8888@163.com
-create_dt: 2021/7/16 11:51
-"""
-
 import os
 import time
 import dill
@@ -18,7 +12,7 @@ from loguru import logger
 from typing import Any, Union, AnyStr
 
 
-home_path = Path(os.environ.get("CZSC_HOME", os.path.join(os.path.expanduser("~"), ".czsc")))
+home_path = Path(os.environ.get("CZSC_HOME", os.path.join(os.path.expanduser("~"), ".czsc")))  # 根目录下的czsc文件夹
 home_path.mkdir(parents=True, exist_ok=True)
 
 

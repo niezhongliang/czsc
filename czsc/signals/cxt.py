@@ -463,6 +463,7 @@ def cxt_third_buy_V230228(c: CZSC, **kwargs) -> OrderedDict:
         tb_price = bis[-1].low < min([x.low for x in bis]) + 1.618 * np.mean([x.power_price for x in key_bis])
 
         if tb_break and tb_price:
+        # if tb_break:
             res["match"] = True
         return res
 

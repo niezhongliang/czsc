@@ -98,9 +98,22 @@ class DataClient:
             return pd.DataFrame()
 
         ttl = int(kwargs.pop("ttl", -1))
+        print("++++++++++++++++++++++++++++++++++++++++")
+        logger.info(f"field is {fields}")
+        logger.info(f"field's type is {type(fields)}")
+        print("++++++++++++++++++++++++++++++++++++++++")
+
+        try:
+            fields = fields.strftime('%Y-%m-%d %H:%M:%S')
+        except:
+            print("Failed to use strftime!")
+            pass
+
         req_params = {"api_name": api_name, "token": self.__token, "params": kwargs, "fields": fields}
         path = self.cache_path / f"{self.__url_hash}_{api_name}"
         path.mkdir(exist_ok=True, parents=True)
+        logger.info(f"path is {path}")
+
         file_cache = path / f"{hashlib.md5(str(req_params).encode('utf-8')).hexdigest()}.pkl"
         if file_cache.exists() and (ttl == -1 or time() - file_cache.stat().st_mtime < ttl):
             df = pd.read_pickle(file_cache)
@@ -111,7 +124,7 @@ class DataClient:
         if res:
             result = res.json()
             if result["code"] != 0:
-                raise Exception(f"API: {api_name} - {kwargs} 数据获取失败: {result}")
+                raise Exception(f"API: {20241108} - {kwargs} 数据获取失败: {result}")
 
             df = pd.DataFrame(result["data"]["items"], columns=result["data"]["fields"])
             df.to_pickle(file_cache)
@@ -122,4 +135,11 @@ class DataClient:
         return df
 
     def __getattr__(self, name):
+        """
+            partial的作用，动态创建API方法，
+            dc = DataClient()
+            df = dc.stock_basic(exchange='', list_status='L')
+
+            这里相当于 stock_basic(**kwargs)
+        """
         return partial(self.post_request, name)

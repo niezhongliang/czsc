@@ -30,7 +30,9 @@ def format_kline(kline: pd.DataFrame, freq: Freq) -> List[RawBar]:
     bars = []
     dt_key = "trade_time" if "分钟" in freq.value else "trade_date"
     kline = kline.sort_values(dt_key, ascending=True, ignore_index=True)
+    # 将每一行转为list
     records = kline.to_dict("records")
+    # records = kline.to_dict("list") # 将每一列转为列表
 
     for i, record in enumerate(records):
         if freq == Freq.D:
@@ -128,12 +130,24 @@ def moneyflow_hsgt(start_date, end_date):
     df.fillna(0, inplace=True)
     return df
 
-
+# https://tushare.pro/document/2?doc_id=25
 def get_symbols(step="all"):
     """获取标的代码"""
+    # exchange: 交易所代码 : SSE 上交所， SZSE 深交所
+    # list_status: 上市状态，L-上市，D-退市，P-暂停上市,
+    # list_date: 上市日期
+    # delist_date: 退市日期
+    # ts_code: TS 股票代码
+    # symbol: 股票代码
+    # name: 股票名称
+    # area: 地域
+    # industry: 所属行业
+    
+    # 查询当前所有正常上市交易的股票列表
     stocks = dc.stock_basic(exchange="", list_status="L", fields="ts_code,symbol,name,area,industry,list_date")
-    stocks_ = stocks[stocks["list_date"] < "2010-01-01"].ts_code.to_list()
+    stocks_ = stocks[stocks["list_date"] < "2018-01-01"].ts_code.to_list()
     stocks_map = {
+        # 指数
         "index": [
             "000905.SH",
             "000016.SH",
@@ -147,10 +161,15 @@ def get_symbols(step="all"):
             "399317.SZ",
             "399303.SZ",
         ],
+        # 股票
         "stock": stocks.ts_code.to_list(),
+        # 检查
         "check": ["000001.SZ"],
+        # 训练
         "train": stocks_[:200],
+        # 验证使用
         "valid": stocks_[200:600],
+        # ETF
         "etfs": [
             "512880.SH",
             "518880.SH",
@@ -186,11 +205,11 @@ def get_symbols(step="all"):
     return symbols
 
 
-def get_raw_bars(symbol, freq, sdt, edt, fq="后复权", raw_bar=True):
+def get_raw_bars(symbol, freq, sdt, edt, fq="前复权", raw_bar=True, refresh=True):
     """读取本地数据"""
     from czsc import data
 
-    tdc = data.TsDataCache(data_path=cache_path)
+    tdc = data.TsDataCache(data_path=cache_path, refresh=refresh)
     ts_code, asset = symbol.split("#")
     freq = str(freq)
     adj = "qfq" if fq == "前复权" else "hfq"

@@ -14,9 +14,69 @@ import plotly.express as px
 from czsc.objects import Event, Position, RawBar
 from czsc import CzscStrategyBase, Position, Freq, CZSC
 from czsc.connectors.ts_connector import get_raw_bars, get_symbols
-from czsc.utils.ta import SMA, EMA, MACD, RSI, BOLL
+from czsc.utils.ta import SMA, EMA, MACD
 from czsc.utils.sig import get_zs_seq
 import czsc
+
+# 添加 talib 导入来获取 RSI 和 BOLL
+try:
+    import talib as ta
+    def RSI(close, timeperiod=14):
+        return ta.RSI(close, timeperiod=timeperiod)
+    
+    def BOLL(close, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0):
+        return ta.BBANDS(close, timeperiod=timeperiod, nbdevup=nbdevup, nbdevdn=nbdevdn, matype=matype)
+except ImportError:
+    # 如果没有安装talib，使用简化版实现
+    def RSI(close, timeperiod=14):
+        """简化的RSI计算"""
+        deltas = np.diff(close)
+        gains = np.where(deltas > 0, deltas, 0)
+        losses = np.where(deltas < 0, -deltas, 0)
+        
+        avg_gains = []
+        avg_losses = []
+        
+        for i in range(len(gains)):
+            if i < timeperiod:
+                avg_gain = np.mean(gains[:i+1]) if i > 0 else gains[0]
+                avg_loss = np.mean(losses[:i+1]) if i > 0 else losses[0]
+            else:
+                avg_gain = np.mean(gains[i-timeperiod+1:i+1])
+                avg_loss = np.mean(losses[i-timeperiod+1:i+1])
+            
+            avg_gains.append(avg_gain)
+            avg_losses.append(avg_loss)
+        
+        rsi = []
+        for i in range(len(avg_gains)):
+            if avg_losses[i] == 0:
+                rsi.append(100)
+            else:
+                rs = avg_gains[i] / avg_losses[i]
+                rsi.append(100 - (100 / (1 + rs)))
+        
+        # 在开头补充一个值以匹配原始数组长度
+        rsi = [rsi[0]] + rsi
+        return np.array(rsi[:len(close)])
+    
+    def BOLL(close, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0):
+        """简化的布林带计算"""
+        middle = SMA(close, timeperiod)
+        std = []
+        
+        for i in range(len(close)):
+            if i < timeperiod:
+                seq = close[0:i+1]
+            else:
+                seq = close[i-timeperiod+1:i+1]
+            std.append(np.std(seq))
+        
+        std = np.array(std)
+        upper = middle + nbdevup * std
+        lower = middle - nbdevdn * std
+        
+        return upper, middle, lower
 
 
 class EnhancedMultiFactorStrategy(CzscStrategyBase):
@@ -36,158 +96,80 @@ class EnhancedMultiFactorStrategy(CzscStrategyBase):
         self.relative_strength_period = kwargs.get('relative_strength_period', 20)
         self.price_deviation_threshold = kwargs.get('price_deviation_threshold', 2.0)
         
-    def create_multi_factor_position(self, symbol, **kwargs):
-        """创建多因子价差套利持仓策略"""
+    def create_chan_zhongshu_divergence_position(self, symbol, **kwargs):
+        """创建缠论中枢背驰策略"""
         
-        # === 开多策略：多因子验证 ===
-        long_opens = [{
-            "operate": "开多",
-            "signals_not": [
-                "日线_D1_涨跌停V230331_涨停_任意_任意_0",  # 排除涨停板
-                "周线_D1N4TH5_形态V230824_向下_任意_任意_0",  # 排除周线下跌趋势
-            ],
-            "signals_all": [],  # 全局必须满足的信号
-            "factors": [
-                {
-                    "name": "趋势确认",
-                    "signals_all": [
-                        "周线_D1N4TH5_形态V230824_向上_任意_任意_0",  # 周线上涨趋势
-                        "日线_D1N4TH5_形态V230824_向上_任意_任意_0",  # 日线上涨趋势
-                    ],
-                    "signals_any": [
-                        "周线_D3N1笔趋势_高低点辅助判断V230913_上升趋势_超强_任意_0",
-                        "日线_D3N1笔趋势_高低点辅助判断V230913_上升趋势_超强_任意_0",
-                        "周线_D1_双均线V221203_多头_任意_任意_0",  # 周线均线多头
-                    ],
-                    "signals_not": []
-                },
-                {
-                    "name": "三买点确认",
-                    "signals_all": [],
-                    "signals_any": [
-                        # 不同周期的三买点
-                        "日线_D1#SMA#12_BS3辅助V230319_三买_均线新高_任意_0",
-                        "日线_D1#SMA#20_BS3辅助V230319_三买_均线底分_任意_0",
-                        "日线_D1#SMA#34_BS3辅助V230319_三买_均线新高_任意_0",
-                        # 标准三买点
-                        "日线_D1_三买形态V230228_一买_任意_任意_0",
-                        "日线_D1_三买形态V230228_二买_任意_任意_0", 
-                        "日线_D1_三买形态V230228_三买_任意_任意_0",
-                        # 补充买点信号
-                        "日线_D1B_SELL1_底背驰买点_任意_任意_任意_0",
-                    ],
-                    "signals_not": []
-                },
-                {
-                    "name": "技术指标确认",
-                    "signals_all": [],
-                    "signals_any": [
-                        "日线_D1_双均线V221203_多头_任意_任意_0",  # 均线多头排列
-                        "日线_D1_MACD快慢线V221101_多头_任意_任意_0",  # MACD多头
-                        "日线_D1_MACD背驰V221201_底背驰_任意_任意_0",  # MACD底背驰
-                        "日线_D1_布林带突破V221112_下轨_任意_任意_0",  # 布林下轨反弹
-                        "日线_D1_KDJ多空V230322_看多_任意_任意_0",  # KDJ金叉
-                    ],
-                    "signals_not": [
-                        "日线_D1_RSI状态V230227_超买_任意_任意_0",  # 避免超买
-                    ]
-                },
-                {
-                    "name": "量价配合确认",
-                    "signals_all": [],
-                    "signals_any": [
-                        "日线_D1_成交量突增V221216_放量_任意_任意_0",  # 放量突破
-                        "日线_D1_量价一致性V230214_量价齐升_任意_任意_0",  # 量价配合
-                        "日线_D1_成交量状态V230214_温和放量_任意_任意_0",  # 温和放量
-                    ],
-                    "signals_not": [
-                        "日线_D1_成交量状态V230214_地量_任意_任意_0",  # 避免地量
-                    ]
-                },
-                {
-                    "name": "价差套利确认",
-                    "signals_all": [],
-                    "signals_any": [
-                        # 相对强势信号
-                        "日线_D1_相对强弱V230214_强于大盘_任意_任意_0",
-                        "日线_D1_价格偏离V230214_低估_任意_任意_0",
-                        # 均值回归信号
-                        "日线_D1_均值回归V230214_超跌反弹_任意_任意_0",
-                    ],
-                    "signals_not": []
-                }
-            ]
-        }]
+        # 基础过滤信号
+        long_basis_signals = [
+            "周线_D1_表里关系V230101_向上_任意_任意_0",      # 1. 周线趋势向上
+            "日线_D1SMA#120_分类V221101_多头_向上_任意_0",   # 2. 日线在年线之上且年线向上
+        ]
         
-        # === 平多策略：获利了结和风险控制 ===
-        long_exits = [{
-            "operate": "平多",
-            "signals_not": [],
-            "signals_all": [],
-            "factors": [
-                {
-                    "name": "一卖点确认",
-                    "signals_all": [],
-                    "signals_any": [
-                        "日线_D1B_SELL1_一卖_5笔_任意_0",  # 标准一卖
-                        "日线_D1B_SELL1_一卖_7笔_任意_0",
-                        "日线_D1B_SELL1_一卖_9笔_任意_0",
-                        "日线_D1_MACD背驰V221201_顶背驰_任意_任意_0",  # 顶背驰
-                        "日线_D1_三卖形态V230228_一卖_任意_任意_0",  # 三卖点
-                    ],
+        # 开多事件列表：任意一个事件满足即可开多
+        long_opens = []
+        
+        # 定义多个独立的底背驰买点事件
+        buy_signals = {
+            "三笔盘整底背驰": "日线_D1三笔_形态V230618_向下盘背_任意_任意_0",
+            "七笔aAb式底背驰": "日线_D1七笔_形态V230620_aAb式底背驰_任意_任意_0",
+            "七笔类趋势底背驰": "日线_D1七笔_形态V230620_类趋势底背驰_任意_任意_0",
+        }
+        
+        for name, signal in buy_signals.items():
+            long_opens.append({
+                "operate": "开多",
+                "signals_not": ["日线_D1_涨跌停V230331_涨停_任意_任意_0"],
+                "signals_all": [],
+                "factors": [{
+                    "name": name,
+                    "signals_all": long_basis_signals + [signal],
+                    "signals_any": [],
                     "signals_not": []
-                },
-                {
-                    "name": "趋势转弱",
-                    "signals_all": [],
-                    "signals_any": [
-                        "日线_D1N4TH5_形态V230824_向下_任意_任意_0",  # 日线转为下跌
-                        "日线_D3N1笔趋势_高低点辅助判断V230913_下降趋势_超强_任意_0",
-                        "日线_D1_双均线V221203_空头_任意_任意_0",  # 均线空头排列
-                        "周线_D1N4TH5_形态V230824_向下_任意_任意_0",  # 周线转空
-                    ],
+                }]
+            })
+        
+        # 平多事件列表：任意一个事件满足即可平多
+        long_exits = []
+        
+        # 定义多个独立的顶背驰或趋势破坏卖点事件
+        sell_signals = {
+            "三笔盘整顶背驰": "日线_D1三笔_形态V230618_向上盘背_任意_任意_0",
+            "七笔aAb式顶背驰": "日线_D1七笔_形态V230620_aAb式顶背驰_任意_任意_0",
+            "七笔类趋势顶背驰": "日线_D1七笔_形态V230620_类趋势顶背驰_任意_任意_0",
+            "跌破20日均线": "日线_D1SMA#20_分类V221101_空头_任意_任意_0",
+            "日线趋势转空": "日线_D1_表里关系V230101_向下_任意_任意_0",
+        }
+        
+        for name, signal in sell_signals.items():
+            long_exits.append({
+                "operate": "平多",
+                "signals_not": [],
+                "signals_all": [],
+                "factors": [{
+                    "name": name,
+                    "signals_all": [signal],
+                    "signals_any": [],
                     "signals_not": []
-                },
-                {
-                    "name": "技术指标警示",
-                    "signals_all": [],
-                    "signals_any": [
-                        "日线_D1_RSI状态V230227_超买_任意_任意_0",  # RSI超买
-                        "日线_D1_布林带突破V221112_上轨突破_任意_任意_0",  # 布林上轨突破
-                        "日线_D1_MACD快慢线V221101_空头_任意_任意_0",  # MACD转空
-                        "日线_D1_KDJ多空V230322_看空_任意_任意_0",  # KDJ死叉
-                    ],
-                    "signals_not": []
-                },
-                {
-                    "name": "价差套利退出",
-                    "signals_all": [],
-                    "signals_any": [
-                        "日线_D1_相对强弱V230214_弱于大盘_任意_任意_0",  # 相对转弱
-                        "日线_D1_价格偏离V230214_高估_任意_任意_0",  # 价格过高
-                        "日线_D1_均值回归V230214_超涨回调_任意_任意_0",  # 超涨回调
-                    ],
-                    "signals_not": []
-                }
-            ]
-        }]
+                }]
+            })
         
         return Position(
-            name=f"多因子价差套利_{symbol}",
+            name=f"缠论中枢背驰_{symbol}",
             symbol=symbol,
             opens=[Event.load(x) for x in long_opens],
             exits=[Event.load(x) for x in long_exits],
-            interval=kwargs.get("interval", 3600 * 24),  # 每日检查一次
-            timeout=kwargs.get("timeout", 30 * 20),  # 20个交易日超时
-            stop_loss=kwargs.get("stop_loss", 800),  # 8%止损
+            interval=kwargs.get("interval", 3600 * 24),
+            timeout=kwargs.get("timeout", 30 * 20),
+            stop_loss=kwargs.get("stop_loss", 1000),
             T0=kwargs.get("T0", False),
         )
 
     @property
     def positions(self) -> List[Position]:
         """返回策略持仓配置"""
+        # 使用新的中枢背驰策略
         return [
-            self.create_multi_factor_position(symbol=self.symbol, T0=False),
+            self.create_chan_zhongshu_divergence_position(symbol=self.symbol, T0=False),
         ]
 
 
@@ -416,21 +398,32 @@ class StrategyVisualizer:
                     row=1, col=1
                 )
         
-        # 买卖点标记
+        # 买卖点标记 - 修复字段名问题
         if hasattr(self, 'trades') and self.trades:
             buy_points_x, buy_points_y, buy_text = [], [], []
             sell_points_x, sell_points_y, sell_text = [], [], []
             
             for trade in self.trades:
-                if trade['操作'] in ['开多', '加多']:
-                    buy_points_x.append(trade['交易时间'])
-                    buy_points_y.append(trade['交易价格'])
-                    buy_text.append(f"买入: {trade['交易价格']:.2f}<br>时间: {trade['交易时间']}")
-                elif trade['操作'] in ['平多', '减多']:
-                    sell_points_x.append(trade['交易时间'])
-                    sell_points_y.append(trade['交易价格'])
-                    sell_text.append(f"卖出: {trade['交易价格']:.2f}<br>时间: {trade['交易时间']}<br>收益: {trade.get('盈亏金额', 0):.2f}")
-            
+                # 使用正确的字段名
+                trade_direction = trade.get('交易方向', '')
+                open_time = trade.get('开仓时间', '')
+                close_time = trade.get('平仓时间', '')
+                open_price = trade.get('开仓价格', 0)
+                close_price = trade.get('平仓价格', 0)
+                profit = trade.get('盈亏比例', 0)  # 以BP为单位
+                
+                if trade_direction == '多头':
+                    # 买点
+                    buy_points_x.append(open_time)
+                    buy_points_y.append(open_price)
+                    buy_text.append(f"买入: {open_price:.2f}<br>时间: {open_time}")
+                    
+                    # 卖点
+                    if close_time:
+                        sell_points_x.append(close_time)
+                        sell_points_y.append(close_price)
+                        sell_text.append(f"卖出: {close_price:.2f}<br>时间: {close_time}<br>收益: {profit:.2f}BP")
+        
             # 买点标记
             if buy_points_x:
                 fig.add_trace(
@@ -510,8 +503,8 @@ class StrategyVisualizer:
             row=5, col=1
         )
         fig.add_hline(y=0, line_dash="dot", line_color="gray", row=5, col=1)
-        fig.add_hline(y=5, line_dash="dash", line_color="red", row=5, col=1)  # 超买线
-        fig.add_hline(y=-5, line_dash="dash", line_color="green", row=5, col=1)  # 超卖线
+        fig.add_hline(y=5, line_dash="dash", line_color="red", row=5, col=1)
+        fig.add_hline(y=-5, line_dash="dash", line_color="green", row=5, col=1)
         
         # 价格偏离标记
         price_deviation = np.abs(relative_strength)
@@ -749,7 +742,8 @@ def main():
     
     # 获取目标股票
     symbols = get_symbols('stock')
-    search_code = '601008'  # 连云港
+    # search_code = '601008'  # 连云港
+    search_code = '002594'  # 连云港
     target_symbol = None
     
     for symbol in symbols:

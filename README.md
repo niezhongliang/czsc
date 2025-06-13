@@ -1,105 +1,434 @@
-# czsc - 缠中说禅技术分析工具
+## 项目概述
 
-[![Downloads](https://static.pepy.tech/personalized-badge/czsc?period=total&units=international_system&left_color=red&right_color=orange&left_text=Downloads/Total)](https://pepy.tech/project/czsc)
-[![Downloads](https://static.pepy.tech/personalized-badge/czsc?period=month&units=international_system&left_color=red&right_color=orange&left_text=Downloads/Month)](https://pepy.tech/project/czsc)
-[![Downloads](https://static.pepy.tech/personalized-badge/czsc?period=week&units=international_system&left_color=red&right_color=orange&left_text=Downloads/Week)](https://pepy.tech/project/czsc)
-[![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/)
-[![PyPI](https://img.shields.io/pypi/v/czsc.svg)](https://pypi.org/project/czsc/)
-[![Documentation Status](https://readthedocs.org/projects/czsc/badge/?version=latest)](https://czsc.readthedocs.io/en/latest/?badge=latest)
+CZSC（缠中说禅）是一个基于缠中说禅理论的量化交易分析工具库，专注于技术分析中的分型、笔、中枢等核心概念的程序化实现。本库提供了完整的`信号-因子-事件-交易`量化交易逻辑体系，支持多周期联立决策分析。
 
-**[API文档](https://czsc.readthedocs.io/en/latest/modules.html)** |
-**[项目文档](https://s0cqcxuy3p.feishu.cn/wiki/wikcn3gB1MKl3ClpLnboHM1QgKf)** |
-**[投研数据共享](https://s0cqcxuy3p.feishu.cn/wiki/wikcnzuPawXtBB7Cj7mqlYZxpDh)** |
-**[信号函数编写规范](https://s0cqcxuy3p.feishu.cn/wiki/wikcnCFLLTNGbr2THqo7KtWfBkd)**
+## 🏗️ 系统架构
 
->源于[缠中说缠博客](http://blog.sina.com.cn/chzhshch)，原始博客中的内容不太完整，且没有评论，以下是网友整理的原文备份
-* 备份网址1：http://www.fxgan.com
-
-* 已经开始用czsc库进行量化研究的朋友，欢迎[加入飞书群](https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=0bak668e-7617-452c-b935-94d2c209e6cf)，快点击加入吧！
-* [B站视频教程合集（持续更新...）](https://space.bilibili.com/243682308/channel/series)
-
-> 最近在考虑使用 vue + rust + tauri 为 CZSC 开发一个桌面应用，欢迎有兴趣的朋友一起参与。
-> 如果你碰巧熟悉 vue、tauri、rust 的使用，欢迎加入我们的开发组，一起为 CZSC 开发一个更好的桌面应用。
-> 有意愿的朋友请联系我，微信号：**zengbin93**，备注：**桌面应用开发**。
-> 我们将为你提供一个更好的量化交易学习和交流平台。
-
-## 缠论精华
-
->学了本ID的理论，去再看其他的理论，就可以更清楚地看到其缺陷与毛病，因此，广泛地去看不同的理论，不仅不影响本ID理论的学习，更能明白本ID理论之所以与其他理论不同的根本之处。
-
->为什么要去了解其他理论，就是这些理论操作者的行为模式，将构成以后我们猎杀的对象，他们操作模式的缺陷，就是以后猎杀他们的最好武器，这就如同学独孤九剑，必须学会发现所有派别招数的缺陷，这也是本ID理论学习中一个极为关键的步骤。
-
->真正的预测，就是不测而测。所有预测的基础，就是分类，把所有可能的情况进行完全分类。有人可能说，分类以后，把不可能的排除，最后一个结果就是精确的。
->这是脑子锈了的想法，任何的排除，等价于一次预测，每排除一个分类，按概率的乘法原则，就使得最后的所谓精确变得越不精确，最后还是逃不掉概率的套子。
->对于预测分类的唯一正确原则就是不进行任何排除，而是要严格分清每种情况的边界条件。任何的分类，其实都等价于一个分段函数，就是要把这分段函数的边界条件确定清楚。 
->边界条件分段后，就要确定一旦发生哪种情况就如何操作，也就是把操作也同样给分段化了。然后，把所有情况交给市场本身，让市场自己去当下选择。
->所有的操作，其实都是根据不同分段边界的一个结果，只是每个人的分段边界不同而已。因此，问题不是去预测什么，而是确定分段边界。
-
-## 知识星球
-
-* [CZSC小圈子（缠论、量化、专享案例）](https://s0cqcxuy3p.feishu.cn/wiki/wikcnwXSk9mWnki1b6URPhLA2Hc)
-
-* 链接：https://wx.zsxq.com/dweb2/index/group/88851448582512
-* 加入：https://t.zsxq.com/0aMSAqcgO
-
-> **知识星球【CZSC小圈子】的定位是什么？**
-> - 为仔细研读过禅师原文并且愿意使用 CZSC 库进行量化投研的朋友提供一个深入交流的平台。
-> - 寻找一群有能力、有兴趣、有主见的朋友共同进行量化策略研究讨论交流。
-> - 对于刚接触缠论和量化交易的新朋友，给出一些力所能及的帮助（可以在圈子中提问，必回复）。
-> - 2024年，小圈子将提供一些专享内容，主要是使用 czsc 构建量化策略的优质案例。
-
-
-## 项目贡献
-
-* [择时策略研究框架](https://s0cqcxuy3p.feishu.cn/wiki/wikcnhizrtIOQakwVcZLMKJNaib)
-* 缠论的 `分型、笔` 的自动识别，详见 `czsc/analyze.py`
-* 定义并实现 `信号-因子-事件-交易` 量化交易逻辑体系，因子是信号的线性组合，事件是因子的同类合并，详见 `czsc/objects.py`
-* 定义并实现了若干信号函数，详见 `czsc/signals`
-* 缠论多级别联立决策分析交易，详见 `CzscTrader`
-* [Streamlit 量化研究组件库](https://s0cqcxuy3p.feishu.cn/wiki/AATuw5vN7iN9XbkVPuwcE186n9f)
-
-
-## 安装使用
-
-**注意:** python 版本必须大于等于 3.7
-
-直接从github安装：
-```
-pip install git@github.com:waditu/czsc.git -U
+```mermaid
+graph TB
+    subgraph "数据层 Data Layer"
+        A[原始K线数据 RawBar] --> B[去包含K线 NewBar]
+        B --> C[分型识别 FX]
+        C --> D[笔识别 BI]
+        D --> E[中枢识别 ZS]
+    end
+    
+    subgraph "分析层 Analysis Layer"
+        F[CZSC核心分析引擎] --> G[技术指标计算]
+        F --> H[缠论形态识别]
+        F --> I[多周期联立分析]
+    end
+    
+    subgraph "信号层 Signal Layer"
+        J[原子信号 Signal] --> K[组合因子 Factor]
+        K --> L[交易事件 Event]
+        L --> M[持仓策略 Position]
+    end
+    
+    subgraph "策略层 Strategy Layer"
+        N[策略基类 CzscStrategyBase] --> O[回测引擎 DummyBacktest]
+        N --> P[实盘交易 CzscTrader]
+        N --> Q[组合管理 WeightBacktest]
+    end
+    
+    subgraph "数据源 Data Sources"
+        R[Tushare] --> S[数据连接器]
+        T[聚宽JQData] --> S
+        U[掘金GM] --> S
+        V[天勤TQ] --> S
+        S --> A
+    end
+    
+    subgraph "工具组件 Utils"
+        W[绘图工具 Plotting]
+        X[性能分析 Performance]
+        Y[缓存系统 Cache]
+        Z[特征工程 Features]
+    end
+    
+    E --> F
+    G --> J
+    H --> J
+    I --> J
+    M --> N
+    F --> W
+    F --> X
+    
+    style A fill:#e1f5fe
+    style F fill:#f3e5f5
+    style J fill:#e8f5e8
+    style N fill:#fff3e0
 ```
 
-直接从github指定分支安装最新版：
+## 🧩 核心概念详解
+
+### 1. 数据结构体系
+
+#### 基础K线结构
+- **RawBar**: 原始K线数据，包含开高低收量额等基础信息
+- **NewBar**: 经过包含关系处理的K线，是后续分析的基础
+
+#### 缠论核心结构
+- **FX (分型)**: 顶分型(G)和底分型(D)，三根K线形成的局部极值点
+- **BI (笔)**: 连接相邻异性分型的线段，是缠论分析的基本单位
+- **ZS (中枢)**: 至少由三笔构成的价格重叠区间，表示多空力量平衡区域
+
+### 2. 信号系统架构
+
+#### 信号分层设计
+```python
+# 信号定义示例
+Signal(k1="30分钟", k2="倒0笔", k3="方向", v1="向上", v2="任意", v3="任意", score=0)
+
+# 因子组合示例  
+Factor(
+    signals_all=[Signal("30分钟_D1_表里关系V230101_向上_任意_任意_0")],
+    signals_any=[],
+    signals_not=[]
+)
+
+# 事件定义示例
+Event(
+    operate=Operate.LO,  # 开多
+    factors=[factor1, factor2]
+)
 ```
-pip install git+https://github.com/waditu/czsc.git@V0.9.46 -U
+
+#### 信号分类体系
+- **cxt**: 缠论技术信号（分型、笔、中枢相关）
+- **tas**: 技术分析信号（MACD、MA、KDJ等传统指标）
+- **bar**: K线形态信号（单根或多根K线模式）
+- **vol**: 成交量相关信号
+- **byi**: 买卖点信号
+- **jcc**: 技术形态信号
+
+### 3. 策略构建流程
+
+```python
+class MyStrategy(CzscStrategyBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+    
+    @property
+    def positions(self):
+        # 定义开仓条件
+        opens = [Event.load({
+            "operate": "开多",
+            "factors": [{
+                "signals_all": ["30分钟_D1_表里关系V230101_向上_任意_任意_0"]
+            }]
+        })]
+        
+        # 定义平仓条件  
+        exits = [Event.load({
+            "operate": "平多",
+            "factors": [{
+                "signals_all": ["30分钟_D1_表里关系V230101_向下_任意_任意_0"]
+            }]
+        })]
+        
+        return [Position(
+            symbol=self.symbol,
+            opens=opens,
+            exits=exits,
+            interval=3600*4,  # 开仓间隔
+            timeout=16*30,    # 超时平仓
+            stop_loss=500     # 止损基点
+        )]
 ```
 
-从`pypi`安装：
+## 📊 股票因子开发指南
+
+### 1. 因子开发流程
+
+#### Step 1: 信号函数开发
+```python
+def custom_signal_V240101(c: CZSC, **kwargs) -> OrderedDict:
+    """自定义信号函数示例
+    
+    :param c: CZSC对象
+    :param kwargs: 参数配置
+    :return: 信号字典
+    """
+    di = int(kwargs.get("di", 1))
+    freq = c.freq.value
+    
+    # 获取分析所需数据
+    if len(c.bi_list) < di + 2:
+        return create_single_signal(k1=freq, k2=f"D{di}", k3="自定义信号V240101", v1="其他")
+    
+    bi = c.bi_list[-di]  # 获取倒数第di笔
+    
+    # 信号计算逻辑
+    if bi.direction == Direction.Up and bi.power > 50:
+        v1 = "强势向上"
+    elif bi.direction == Direction.Down and bi.power > 50:
+        v1 = "强势向下"
+    else:
+        v1 = "其他"
+    
+    return create_single_signal(k1=freq, k2=f"D{di}", k3="自定义信号V240101", v1=v1)
 ```
-pip install czsc -U -i https://pypi.python.org/simple
+
+#### Step 2: 因子验证与分析
+```python
+from czsc import SignalAnalyzer
+
+# 配置信号参数网格
+signals_config = [
+    {'name': 'custom_signal_V240101', 'freq': '30分钟', 'di': 1},
+    {'name': 'custom_signal_V240101', 'freq': '60分钟', 'di': 1},
+]
+
+# 执行信号验证
+sa = SignalAnalyzer(
+    symbols=symbols,
+    read_bars=get_raw_bars,
+    signals_config=signals_config,
+    results_path="./signal_analysis"
+)
+sa.execute(max_workers=8)
 ```
 
-## 使用前必看
+#### Step 3: 因子组合与策略构建
+```python
+def create_factor_strategy(symbol, **kwargs):
+    """基于多因子的策略构建"""
+    
+    # 多因子开多条件
+    long_factors = [
+        {
+            "signals_all": [
+                "30分钟_D1_自定义信号V240101_强势向上_任意_任意_0",
+                "30分钟_D1_MACD背驰V221201_底背驰_任意_任意_0"
+            ],
+            "signals_not": ["30分钟_D1_涨跌停V230331_涨停_任意_任意_0"]
+        }
+    ]
+    
+    # 多因子开空条件
+    short_factors = [
+        {
+            "signals_all": [
+                "30分钟_D1_自定义信号V240101_强势向下_任意_任意_0",
+                "30分钟_D1_MACD背驰V221201_顶背驰_任意_任意_0"
+            ],
+            "signals_not": ["30分钟_D1_涨跌停V230331_跌停_任意_任意_0"]
+        }
+    ]
+    
+    opens = [
+        {"operate": "开多", "factors": long_factors},
+        {"operate": "开空", "factors": short_factors}
+    ]
+    
+    return Position(
+        symbol=symbol,
+        opens=[Event.load(x) for x in opens],
+        exits=[],
+        interval=3600*2,
+        timeout=20*30,
+        stop_loss=300
+    )
+```
 
-* 目前的开发还在高频次的迭代中，对于已经在使用某个版本的用户，请谨慎更新，版本兼容性实在是太差，主要是因为当前还有太多考虑不完善的地方，我为此感到抱歉；
-* 这是个人开发的项目，虽然我已经尽可能避坑，但可以很直接的说，这里面一定还有坑，使用前请仔细校验分析结果，发现新坑请告诉我，我来填；
-* 目前开发完成度不高，**API会有比较大的变动，谨慎升级版本**，暂时不准备写文档，没有能力看懂源码的，不建议现在使用。
-* 免责声明：项目开源仅用于技术交流！
-* 如果你发现了项目中的 Bug，可以先读一下《[如何有效地报告 Bug](https://www.chiark.greenend.org.uk/~sgtatham/bugs-cn.html)》，然后在 [issues](https://github.com/waditu/czsc/issues) 中报告 Bug
+### 2. 常用信号函数库
 
+#### 缠论核心信号
+```python
+# 笔方向信号
+"30分钟_D1_表里关系V230101_向上_任意_任意_0"  # 当前笔向上
+"30分钟_D1_表里关系V230101_向下_任意_任意_0"  # 当前笔向下
 
-## 原文整理
+# 中枢信号
+"30分钟_D1_三买形态V230228_一买_任意_任意_0"  # 三买点
+"30分钟_D1_三买形态V230228_三买_任意_任意_0"  # 一买点
 
-* [缠中说禅重新编排版《论语》（整理版）](https://blog.csdn.net/baidu_25764509/article/details/109517775)
-* [缠中说禅交易指南](https://blog.csdn.net/baidu_25764509/article/details/109598229)
-* [缠中说禅技术原理](https://blog.csdn.net/baidu_25764509/article/details/109597255)
-* [缠中说禅图解分析示范](https://blog.csdn.net/baidu_25764509/article/details/110195063)
-* [缠中说禅：缠非缠、禅非禅，枯木龙吟照大千（整理版）](https://blog.csdn.net/baidu_25764509/article/details/110775662)
-* [缠中说禅教你打坐（整理版）](https://blog.csdn.net/baidu_25764509/article/details/113735170)
+# 背驰信号
+"30分钟_D1_MACD背驰V221201_底背驰_任意_任意_0"  # MACD底背驰
+"30分钟_D1_MACD背驰V221201_顶背驰_任意_任意_0"  # MACD顶背驰
+```
 
-**注意：** 如果CSDN的连接打不开，可以直接在 `czsc/docs` 目录下查看 html 文件
+#### 技术指标信号
+```python
+# MACD相关
+"30分钟_D1_MACD快慢线V221101_多头_任意_任意_0"  # MACD多头排列
+"30分钟_D1_MACD快慢线V221101_空头_任意_任意_0"  # MACD空头排列
 
+# MA均线系统
+"30分钟_D1_MA5V221101_向上_任意_任意_0"  # MA5向上
+"30分钟_D1_双均线V221203_多头_任意_任意_0"  # 双均线多头
 
-## 资料分享
+# 布林带
+"30分钟_D1_布林带突破V221112_上轨突破_任意_任意_0"  # 布林上轨突破
+"30分钟_D1_布林带突破V221112_下轨突破_任意_任意_0"  # 布林下轨突破
+```
 
-* 链接：https://pan.baidu.com/s/1RXkP3188F0qu8Yk6CjbxRQ
-* 提取码：vhue
+### 3. 回测与性能评估
+
+#### 策略回测
+```python
+# 执行回测
+trader = strategy.replay(
+    bars=bars,
+    sdt='20210101',
+    edt='20231201', 
+    res_path="./backtest_results"
+)
+
+# 获取交易记录
+trades = trader.positions[0].pairs
+results = trader.positions[0].evaluate()
+
+print(f"总收益率: {results['总收益率']:.2%}")
+print(f"年化收益率: {results['年化收益率']:.2%}")
+print(f"最大回撤: {results['最大回撤']:.2%}")
+print(f"夏普比率: {results['夏普比率']:.2f}")
+```
+
+#### 批量测试
+```python
+from czsc.traders import DummyBacktest
+
+# 批量回测多个标的
+symbols = get_symbols('中证500成分股')[:50]
+results = []
+
+for symbol in symbols:
+    try:
+        bars = get_raw_bars(symbol, freq='30分钟', sdt='20200101', edt='20231201')
+        strategy = MyStrategy(symbol=symbol)
+        trader = strategy.replay(bars, sdt='20210101')
+        performance = trader.positions[0].evaluate()
+        results.append({
+            'symbol': symbol,
+            'return': performance['总收益率'],
+            'sharpe': performance['夏普比率'],
+            'max_dd': performance['最大回撤']
+        })
+    except Exception as e:
+        logger.error(f"{symbol} 回测失败: {e}")
+
+# 统计分析
+df_results = pd.DataFrame(results)
+print(f"平均收益率: {df_results['return'].mean():.2%}")
+print(f"胜率: {(df_results['return'] > 0).mean():.2%}")
+```
+
+## 🔧 开发环境配置
+
+### 数据源配置
+```python
+# tushare配置
+import tushare as ts
+ts.set_token('your_tushare_token')
+
+# 聚宽配置  
+import jqdatasdk as jq
+jq.auth('username', 'password')
+
+# 使用数据连接器
+from czsc.connectors import research
+symbols = research.get_symbols('中证500成分股')
+bars = research.get_raw_bars(symbol, freq='30分钟', sdt='20200101')
+```
+
+### 可视化配置
+```python
+# 使用内置绘图工具
+from czsc import CZSC
+from czsc.utils import KlineChart
+
+# 创建分析对象
+czsc = CZSC(bars, max_bi_num=50)
+
+# 生成交互式图表
+kline = KlineChart(czsc, width="1400px", height="580px")
+kline.open_in_browser()
+
+# 或使用plotly
+fig = czsc.to_plotly()
+fig.show()
+```
+
+## 📈 高级功能
+
+### 1. 多周期联立分析
+```python
+class MultiTimeframeStrategy(CzscStrategyBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # 配置多个分析周期
+        self.freqs = ['5分钟', '30分钟', '日线']
+    
+    @property  
+    def positions(self):
+        # 多周期条件组合
+        opens = [{
+            "operate": "开多",
+            "factors": [{
+                "signals_all": [
+                    "5分钟_D1_表里关系V230101_向上_任意_任意_0",   # 5分钟向上
+                    "30分钟_D1_表里关系V230101_向上_任意_任意_0",  # 30分钟向上
+                    "日线_D1_表里关系V230101_向上_任意_任意_0"     # 日线向上
+                ]
+            }]
+        }]
+        return [Position(symbol=self.symbol, opens=[Event.load(x) for x in opens])]
+```
+
+### 2. 动态止盈止损
+```python
+from czsc.traders import stoploss_by_direction
+
+def dynamic_stop_loss(trader, bar):
+    """动态止损逻辑"""
+    for pos in trader.positions:
+        if pos.operates:
+            latest_op = pos.operates[-1]
+            # 根据市场波动调整止损
+            if latest_op['operate'] in ['开多', '加多']:
+                # 使用ATR动态调整止损点
+                atr_stop = calculate_atr_stop(bar, period=14, multiplier=2.0)
+                pos.stop_loss = max(pos.stop_loss, atr_stop)
+```
+
+### 3. 组合权重管理
+```python
+from czsc.traders import WeightBacktest
+
+# 多策略组合
+strategies = [
+    MyStrategy(symbol=symbol, name='策略A'),
+    AnotherStrategy(symbol=symbol, name='策略B'),
+]
+
+# 权重回测
+wb = WeightBacktest(
+    strategies=strategies,
+    weights=[0.6, 0.4],  # 策略权重
+    rebalance_freq='月度'  # 再平衡频率
+)
+
+results = wb.backtest(sdt='20210101', edt='20231201')
+```
+
+## 🎯 最佳实践
+
+### 1. 信号开发规范
+- 信号函数命名: `模块_功能_版本号` (如: `tas_macd_base_V221101`)
+- 参数标准化: 使用kwargs传递参数，提供默认值
+- 返回格式: 统一使用OrderedDict格式
+- 文档注释: 详细说明信号含义、参数说明、使用示例
+
+### 2. 策略开发规范
+- 模块化设计: 将开平仓逻辑分离，便于单独测试和优化
+- 参数外置: 关键参数通过配置文件管理，避免硬编码
+- 异常处理: 完善的错误处理机制，确保策略稳定运行
+- 版本控制: 策略版本化管理，记录修改历史
+
+### 3. 回测注意事项
+- 数据质量: 确保使用高质量、无未来函数的历史数据
+- 手续费成本: 根据实际交易成本设置合理的手续费率
+- 滑点影响: 考虑市场冲击成本对策略收益的影响
+- 过拟合风险: 避免过度优化参数，注重样本外验证

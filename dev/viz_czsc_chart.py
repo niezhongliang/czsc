@@ -322,6 +322,7 @@ if __name__ == "__main__":
     # 获取股票列表
     symbols = get_symbols('stock')
     search_code = '601008'  # 爱尔眼科
+    # search_code = '300124'  # 爱尔眼科
     
     # 查找股票
     test_symbol = None
